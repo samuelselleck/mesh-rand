@@ -3,13 +3,13 @@ use rand_distr::weighted_alias::WeightedAliasIndex;
 use rand_distr::Distribution;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum MError {
     #[error("failed to initialize: {0}")]
     Initialization(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Triangle {
     origin: m::Vector,
     normal: m::Vector,
@@ -28,6 +28,7 @@ struct Triangle {
 /// use mesh_rand::MeshSurface;
 /// use rand::distributions::Distribution;
 ///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let verticies = [
 ///     [1.0, 0.0, 0.0],
 ///     [0.0, 1.0, 0.0],
@@ -35,17 +36,19 @@ struct Triangle {
 ///     [1.0, 2.0, 0.0],
 /// ];
 /// let faces = [[0, 1, 2], [0, 1, 3]];
-/// let mesh_dist = MeshSurface::new(&verticies, &faces).unwrap();
+/// let mesh_dist = MeshSurface::new(&verticies, &faces)?;
 /// let mut rng = rand::thread_rng();
 /// let sample = mesh_dist.sample(&mut rng);
 /// println!(
 ///     "generated point on mesh at {:?} located on face with index {:?} with normal {:?}",
 ///     sample.position, sample.face_index, sample.normal
 /// );
+/// # Ok(())
+/// # }
 /// ```
 ///
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MeshSurface {
     triangles: Vec<Triangle>,
     triangle_dist: WeightedAliasIndex<f32>,
@@ -109,6 +112,7 @@ impl MeshSurface {
 }
 
 /// Surface sample returned from surface distributions
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct SurfSample {
     /// Generated point on the model surface
     pub position: m::Vector,

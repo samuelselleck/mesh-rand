@@ -2,7 +2,13 @@
 name = "mesh-rand"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["Samuel Selleck"]
+description = "provides methods of generating random points on the surface of 3d models."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/samuelselleck/mesh-rand"
+keywords = ["random", "mesh", "sample", "surface", "distribution"]
+categories = ["algorithms", "game-development", "mathematics"]
+readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
