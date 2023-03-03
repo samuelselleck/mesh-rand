@@ -1,9 +1,7 @@
 * comment everything
 * choose interface (ie vec types)
-* go through API guidelines
 
 ...
-
 
 
 *publish create v 0.1.0

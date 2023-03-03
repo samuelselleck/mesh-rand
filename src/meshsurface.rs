@@ -17,9 +17,9 @@ struct Triangle {
     v: m::Vector,
 }
 
-/// A distribution for sampling uniformly distributed points on the surface of a 3d model
+/// A distribution for sampling points uniformly on the surface of a 3d model
 ///
-/// Uniformly samples the surface of a model by first randomly picking a triangle with probability
+/// Samples the surface of a model by first randomly picking a triangle with probability
 /// proportional to its area, and then uniformly samples a point within that triangle.
 ///
 /// # Example
@@ -61,7 +61,7 @@ impl MeshSurface {
     /// Returns an error if:
     /// * An index defining a face is out of range of the verticies collection
     /// * The area of one of the triangles provided is very close to 0 (`f32::is_normal(area) == false`)
-    /// * The collection of faces is embty
+    /// * The collection of faces is empty
     pub fn new(verts: &[m::Vector], faces: &[[usize; 3]]) -> Result<Self, MError> {
         let mut triangles = Vec::with_capacity(faces.len());
         let mut triangle_areas = Vec::with_capacity(faces.len());
@@ -121,8 +121,8 @@ pub struct SurfSample {
     /// OBS: The normal will be pointing out of the positively oriented side of the triangle. As
     /// an example, the triangle
     /// defined by the verticies `[a, b, c]` where `a = [0.0, 0.0, 0.0]`, `b = [1.0, 0.0, 0.0]` and
-    /// `c = [0.0, 1.0, 0.0]` has the normal [0.0, 0.0, 1.0]. While a triangle defined by
-    /// `[b, a, c]` has the normal [0.0, 0.0, -1.0].
+    /// `c = [0.0, 1.0, 0.0]` has the normal `[0.0, 0.0, 1.0]``. While a triangle defined by
+    /// `[b, a, c]` has the normal `[0.0, 0.0, -1.0]`.
     pub normal: m::Vector,
     /// Index of the triangle the point resides in, in the face slice used for initialization
     pub face_index: usize,
