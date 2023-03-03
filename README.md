@@ -4,7 +4,7 @@ Rust library for generating random points on the surface of a mesh
 # Example
 
 ```rust
-use mesh_rand::MeshSurface;
+use mesh_rand::{MeshSurface, SurfSample};
 use rand::distributions::Distribution;
 // Verticies and faces for a non-regular tetrahedron:
  let verticies = [
