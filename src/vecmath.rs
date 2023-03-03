@@ -17,7 +17,7 @@ pub(crate) fn diff([v1, v2, v3]: Vector, [u1, u2, u3]: Vector) -> Vector {
 }
 
 pub(crate) fn cross([a1, a2, a3]: Vector, [b1, b2, b3]: Vector) -> Vector {
-    [a2 * b3 - a3 * b2, a1 * b3 - a3 * b1, a1 * b2 - a2 * b1]
+    [a2 * b3 - a3 * b2, a3 * b1 - a1 * b3, a1 * b2 - a2 * b1]
 }
 
 pub(crate) fn add([u1, u2, u3]: Vector, [v1, v2, v3]: Vector) -> Vector {
