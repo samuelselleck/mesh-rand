@@ -27,3 +27,7 @@ pub(crate) fn add([u1, u2, u3]: Vector, [v1, v2, v3]: Vector) -> Vector {
 pub(crate) fn mul(v: Vector, factor: f32) -> Vector {
     v.map(|v| v * factor)
 }
+
+pub(crate) fn dist_sq(p1: Vector, p2: Vector) -> f32 {
+    len_sq(diff(p1, p2))
+}
