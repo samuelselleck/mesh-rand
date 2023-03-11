@@ -55,9 +55,11 @@ impl Triangle {
     }
 
     fn intersects_sphere(&self, position: m::Vector, r: f32) -> bool {
+        //TODO this needs to handle the sphere being in the middle,
+        //or we need to break all triangles into smaller ones based on r
         self.points
             .iter()
-            .any(|&p| m::dist_sq(position, p) >= r * r)
+            .any(|&p| m::dist_sq(position, p) <= r * r)
     }
 }
 

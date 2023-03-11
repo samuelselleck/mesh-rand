@@ -31,3 +31,7 @@ pub(crate) fn mul(v: Vector, factor: f32) -> Vector {
 pub(crate) fn dist_sq(p1: Vector, p2: Vector) -> f32 {
     len_sq(diff(p1, p2))
 }
+
+pub(crate) fn midpoint(pl: Vector, pr: Vector) -> Vector {
+    div(add(pl, pr), 2.0)
+}
