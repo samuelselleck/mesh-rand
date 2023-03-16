@@ -55,6 +55,12 @@ impl Triangle {
     }
 
     fn intersects_sphere(&self, position: m::Vector, r: f32) -> bool {
+        let plane_dist = m::dot(m::diff(position, self.origin), self.normal);
+        if plane_dist > r {
+            return false;
+        }
+        let p_on_plane = m::diff(self.origin, m::mul(self.normal, plane_dist));
+
         //TODO this needs to handle the sphere being in the middle,
         //or we need to break all triangles into smaller ones based on r
         self.points

@@ -2,7 +2,7 @@ use crate::vecmath as m;
 use rand_distr::weighted_alias::WeightedAliasIndex;
 use rand_distr::Distribution;
 
-use super::{vert_ids_to_pos, MeshRandError, SurfSample, Triangle};
+use super::{MeshRandError, SurfSample, Triangle};
 
 /// A distribution for sampling points uniformly on the surface of a 3d model
 ///
@@ -53,7 +53,7 @@ impl UniformSurface {
         let mut triangle_areas = Vec::with_capacity(faces.len());
 
         for face in faces {
-            let [p1, p2, p3] = vert_ids_to_pos(face, verts)?;
+            let [p1, p2, p3] = super::vert_ids_to_pos(face, verts)?;
             let Ok(triangle) = Triangle::from_points(p1, p2, p3) else {
                 continue;
             };

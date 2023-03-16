@@ -6,25 +6,16 @@ use super::MeshRandError;
 use crate::{vecmath as m, SurfSample};
 
 pub struct PoissonDiskSurface {
-    uniform_sampler: UniformSurface,
     adjacency_list: Vec<Vec<usize>>,
-    r: f32,
+    verticies: Vec<m::Vector>,
+    edge_connections: HashMap<[usize; 2], Vec<usize>>,
+    faces: Vec<[usize; 3]>,
 }
 
 impl PoissonDiskSurface {
     pub fn new(r: f32, verts: &[m::Vector], faces: &[[usize; 3]]) -> Result<Self, MeshRandError> {
-        let (verts, faces) = Self::split_triangles(verts, faces, r);
-        let uniform_sampler = UniformSurface::new(&verts, &faces)?;
-        println!("#faces: {}, #verts: {}", faces.len(), verts.len());
-
-        let tri_count = uniform_sampler.triangles.len();
-        //The code below constructs a list of neighboring triangles.
-        //Not hyper optimized or anything, but should for normal models be O(#triangles).
-
-        //OBS there is some weird double indexing for trianges in the below code,
-        //since not all triangles in the original model are necesarily kept
-
-        //from two face inds to vec of triangle indexes that contain those inds
+        let tri_count = faces.len();
+        //edge vert indicies to triangle indicies;
         let mut edge_connections = HashMap::<[usize; 2], Vec<usize>>::new();
         for t_ind in 0..tri_count {
             let [i, j, k] = faces[t_ind];
@@ -34,7 +25,6 @@ impl PoissonDiskSurface {
                 edge_connections.entry(pair).or_default().push(t_ind);
             }
         }
-        println!("edge connections: {:?}", edge_connections);
 
         //each triangle index should contain a list of all neighboring triangles
         let mut adjacency_list = vec![Vec::new(); tri_count];
@@ -48,63 +38,81 @@ impl PoissonDiskSurface {
                 }
             }
         }
-        Ok(Self {
-            uniform_sampler,
+        let poisson_disk_surf = Self {
+            faces: faces.to_vec(),
+            verticies: verts.to_vec(),
+            edge_connections,
             adjacency_list,
-            r,
-        })
+        };
+
+        poisson_disk_surf.subdivide();
+
+        Ok(poisson_disk_surf)
     }
 
-    fn split_triangles(
-        verts: &[m::Vector],
-        faces: &[[usize; 3]],
-        max_side_len: f32,
-    ) -> (Vec<m::Vector>, Vec<[usize; 3]>) {
-        let mut verts = verts.to_vec();
-        let mut faces = faces.to_vec();
-        let mut i = 0;
-        while i < faces.len() {
-            if !Self::split_triangle(i, &mut faces, &mut verts, max_side_len) {
-                i += 1;
-            }
+    fn subdivide(&mut self) {}
+
+    fn divide_edge(&mut self, mut edge: [usize; 2]) {
+        //notes:
+        //edge 0 vert = touches no new triangles,
+        //edge 1 vert = touches new triangles
+
+        //verticie mutations
+        let new_vert = m::midpoint(self.verticies[edge[0]], self.verticies[edge[1]]);
+        let new_v_ind = self.verticies.len();
+        self.verticies.push(new_vert);
+
+        //face mutations
+        let tris = self
+            .edge_connections
+            .get(&edge)
+            .expect("edge had no associated tris");
+
+        for &tri_ind in tris {
+            //vertex not connected to edge
+            let (oposite_t_ind, &oposite_v_ind) = self.faces[tri_ind]
+                .iter()
+                .enumerate()
+                .filter(|(ind, i)| !edge.contains(i))
+                .next()
+                .expect("triangle contained duplicate verts");
+            //replace edge[1] with new_v_ind
+            self.faces[tri_ind].iter_mut().for_each(|i| {
+                if *i == edge[1] {
+                    *i = new_v_ind
+                }
+            });
+            //new triangle
+            let new_tri_ind = self.faces.len();
+            let new_tri = [edge[1], new_v_ind, oposite_v_ind];
+            self.faces.push(new_tri);
+            //update all triangle references
+            let mut split_edge = [edge[1], oposite_v_ind];
+            split_edge.sort();
+            let mut to_rem = vec![];
+            self.edge_connections[&split_edge].iter_mut().for_each(|t| {
+                self.adjacency_list[*t].iter_mut().for_each(|o| {
+                    if *o == tri_ind {
+                        to_rem.push(t);
+                        *o = new_tri_ind;
+                    }
+                });
+                if *t == tri_ind {
+                    *t = new_tri_ind;
+                };
+            });
+            //new edge/triangle references
+            self.adjacency_list[tri_ind].retain(|t| to_rem.contains(t));
+            //
+
+            //update all edge references
         }
-        (verts, faces)
+        //things to do at end
+        self.edge_heap.push(new_edge);
+        self.edge_heap.push(edge); //modified edge
     }
 
-    fn split_triangle(
-        ind: usize,
-        faces: &mut Vec<[usize; 3]>,
-        verts: &mut Vec<m::Vector>,
-        max: f32,
-    ) -> bool {
-        let [i, j, k] = faces[ind];
-        let sides = [[j, k], [i, k], [i, j]];
-        let (s_ind, max_side_sq) = sides
-            .iter()
-            .enumerate()
-            .map(|(c, &[i, j])| {
-                let side_len_sq = m::dist_sq(verts[i], verts[j]);
-                (c, side_len_sq)
-            })
-            .max_by(|(_, len1), (_, len2)| len1.total_cmp(len2))
-            .unwrap();
-        if max_side_sq <= max * max {
-            return false;
-        }
-        let [l, r] = sides[s_ind];
-        let o = faces[ind][s_ind];
-        let n = verts.len();
-        let new_v = m::midpoint(verts[l], verts[r]);
-        verts.push(new_v);
-        let l_tri = [l, o, n];
-        let r_tri = [n, o, r];
-        faces.swap_remove(ind);
-        faces.push(l_tri);
-        faces.push(r_tri);
-        return true;
-    }
-
-    pub fn sample_naive<R>(&self, retries: u32, max: u32, rng: &mut R) -> Vec<m::Vector>
+    pub fn sample_naive<R>(&self, r: f32, retries: u32, max: u32, rng: &mut R) -> Vec<m::Vector>
     where
         R: rand::Rng + ?Sized,
     {
@@ -119,7 +127,7 @@ impl PoissonDiskSurface {
                 t_index: t_root,
                 ..
             } = self.uniform_sampler.sample(rng);
-            let exists_closer = self.exists_point_within_sphere(position, t_root, &tri_buckets);
+            let exists_closer = self.exists_point_within_sphere(r, position, t_root, &tri_buckets);
             if !exists_closer {
                 tri_buckets[t_root].push(position);
                 count += 1;
@@ -133,6 +141,7 @@ impl PoissonDiskSurface {
 
     fn exists_point_within_sphere(
         &self,
+        r: f32,
         position: [f32; 3],
         t_index: usize,
         tri_buckets: &Vec<Vec<[f32; 3]>>,
@@ -141,7 +150,7 @@ impl PoissonDiskSurface {
         let mut visited = vec![t_index];
         while let Some(tri_ind) = searching.pop() {
             let tri = self.uniform_sampler.triangles[tri_ind];
-            let intersects = tri.intersects_sphere(position, self.r);
+            let intersects = tri.intersects_sphere(position, r);
             if intersects {
                 for &next_ind in &self.adjacency_list[tri_ind] {
                     if !visited.contains(&next_ind) {
@@ -152,7 +161,7 @@ impl PoissonDiskSurface {
                 let samples_in_tri = &tri_buckets[tri_ind];
                 let exists_closer = samples_in_tri
                     .iter()
-                    .any(|&p| m::dist_sq(p, position) < self.r * self.r);
+                    .any(|&p| m::dist_sq(p, position) < r * r);
                 if exists_closer {
                     return true;
                 }
