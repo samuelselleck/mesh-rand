@@ -37,6 +37,7 @@ pub(crate) fn midpoint(pl: Vector, pr: Vector) -> Vector {
     div(add(pl, pr), 2.0)
 }
 
+#[allow(unused)]
 pub(crate) fn dot([v1, v2, v3]: Vector, [u1, u2, u3]: Vector) -> f32 {
     v1 * u1 + v2 * u2 + v3 * u3
 }
