@@ -1,15 +1,8 @@
 pub mod poisson_disk;
 pub mod uniform;
 
-use crate::vecmath as m;
+use crate::{errors::MeshRandError, vecmath as m};
 use rand_distr::Distribution;
-use thiserror::Error;
-
-#[derive(Error, Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum MeshRandError {
-    #[error("failed to initialize: {0}")]
-    Initialization(String),
-}
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct Triangle {

@@ -21,6 +21,8 @@
 //! # Ok(())
 //! # }
 //! ```
+mod errors;
+mod mesh;
 mod surface;
 mod vecmath;
 pub use surface::poisson_disk::PoissonDiskSurface;
